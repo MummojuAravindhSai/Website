@@ -1,27 +1,28 @@
 {
-  "name": "figma-make-app",
+  "name": "interior-design-website",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.34.3",
   "scripts": {
-    "dev": "NODE_OPTIONS=--no-deprecation next dev --port ${PORT:-3000} --hostname 0.0.0.0",
-    "build": "NODE_OPTIONS=--no-deprecation payload build",
-    "start": "NODE_OPTIONS=--no-deprecation next start",
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload build",
+    "start": "node scripts/start.mjs",
     "format": "oxfmt",
-    "generate:importmap": "NODE_OPTIONS=--no-deprecation payload generate:importmap",
-    "generate:types": "NODE_OPTIONS=--no-deprecation payload generate:types",
-    "payload": "NODE_OPTIONS=--no-deprecation payload"
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit",
+    "generate:importmap": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload generate:importmap",
+    "generate:types": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload generate:types",
+    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload"
   },
   "dependencies": {
-    "@payloadcms/figma": "1.0.0-beta.1",
+    "@payloadcms/db-postgres": "4.0.0-beta.4",
     "@payloadcms/next": "4.0.0-beta.4",
-    "@payloadcms/plugin-cloud-storage": "4.0.0-beta.4",
-    "@payloadcms/plugin-mcp": "4.0.0-beta.4",
     "@payloadcms/richtext-lexical": "4.0.0-beta.4",
+    "@payloadcms/storage-s3": "4.0.0-beta.4",
     "@payloadcms/translations": "4.0.0-beta.4",
     "@payloadcms/ui": "4.0.0-beta.4",
     "graphql": "^16.8.1",
-    "html-react-parser": "^5.2.10",
     "monaco-editor": "0.55.1",
     "next": "16.4.2",
     "payload": "4.0.0-beta.4",
@@ -34,6 +35,7 @@
     "@types/node": "24.12.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "cross-env": "10.1.0",
     "oxfmt": "^0.73.0",
     "postcss": "^8.5.0",
     "tailwindcss": "^4.0.0",
@@ -44,6 +46,12 @@
     "pnpm": "^9 || ^10 || ^11"
   },
   "pnpm": {
+    "overrides": {
+      "dompurify": "3.4.17",
+      "esbuild": "0.25.12",
+      "happy-dom": "21.0.4",
+      "zod": "4.6.6"
+    },
     "onlyBuiltDependencies": [
       "sharp",
       "esbuild",

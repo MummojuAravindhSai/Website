@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import path from 'node:path'
 
 import { createFolderField, createTagField } from 'payload'
 
@@ -16,5 +17,7 @@ export const Media: CollectionConfig = {
     createFolderField({ relationTo: 'folders' }),
     createTagField({ relationTo: 'tags' }),
   ],
-  upload: true,
+  upload: {
+    staticDir: path.resolve(process.cwd(), 'uploads'),
+  },
 }

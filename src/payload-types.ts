@@ -60,18 +60,6 @@ export type SupportedTimezones =
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
   | 'Pacific/Fiji';
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_3DE324E4".
- */
-export type LexicalNodes_3DE324E4 =
-  | SerializedTextNode
-  | SerializedTabNode
-  | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_3DE324E4>
-  | SerializedListNode<LexicalNodes_3DE324E4>
-  | SerializedListItemNode<LexicalNodes_3DE324E4>
-  | SerializedHeadingNode<LexicalNodes_3DE324E4, 'h2' | 'h3' | 'h4'>;
 
 export interface Config {
   auth: {
@@ -114,7 +102,7 @@ export interface Config {
     'payload-llm-instructions': PayloadLlmInstructionsSelect<false> | PayloadLlmInstructionsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | 'en' | 'en'[];
   globals: {
@@ -168,27 +156,38 @@ export interface AdminAuthOperations {
  * via the `definition` "admins".
  */
 export interface Admin {
-  id: string;
+  id: number;
   /**
    * Display name for the studio team member.
    */
   name?: string | null;
   role?: ('administrator' | 'editor' | 'enquiry-manager') | null;
-  figmaHandle?: string | null;
-  figmaImageUrl?: string | null;
-  userGroups?: string[] | null;
-  makePermission?: ('view' | 'edit') | null;
-  email?: string | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
   collection: 'admins';
 }
 /**
@@ -196,19 +195,17 @@ export interface Admin {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
-  _h_folders?: (string | null) | Folder;
-  _h_tags?: (string | Tag)[] | null;
-  prefix?: string | null;
-  _objectKey?: string | null;
+  _h_folders?: (number | null) | Folder;
+  _h_tags?: (number | Tag)[] | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -237,16 +234,16 @@ export interface Media {
  * via the `definition` "folders".
  */
 export interface Folder {
-  id: string;
-  _h_folders?: (string | null) | Folder;
+  id: number;
+  _h_folders?: (number | null) | Folder;
   name: string;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -258,16 +255,16 @@ export interface Folder {
  * via the `definition` "tags".
  */
 export interface Tag {
-  id: string;
-  _h_tags?: (string | null) | Tag;
+  id: number;
+  _h_tags?: (number | null) | Tag;
   name: string;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -279,7 +276,7 @@ export interface Tag {
  * via the `definition` "projects".
  */
 export interface Project {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   /**
@@ -305,13 +302,13 @@ export interface Project {
   /**
    * Primary image used for project cards and the project hero.
    */
-  coverImage?: (string | null) | Media;
+  coverImage?: (number | null) | Media;
   /**
    * Drag rows to reorder the project gallery.
    */
   gallery?:
     | {
-        image: string | Media;
+        image: number | Media;
         caption?: string | null;
         id?: string | null;
       }[]
@@ -320,11 +317,11 @@ export interface Project {
   sortOrder?: number | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -335,7 +332,7 @@ export interface Project {
  * via the `definition` "services".
  */
 export interface Service {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   summary: string;
@@ -348,37 +345,42 @@ export interface Service {
   sortOrder?: number | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Public journal pages are build-time snapshots. After publishing edits or new articles, rebuild and deploy the site for them to appear.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "journal-articles".
  */
 export interface JournalArticle {
-  id: string;
+  id: number;
   title: string;
+  /**
+   * Use a lowercase, hyphen-separated URL slug. Changing a published slug changes its public URL.
+   */
   slug: string;
   category?: string | null;
   excerpt: string;
   body: string;
-  coverImage?: (string | null) | Media;
+  coverImage?: (number | null) | Media;
   publishedOn?: string | null;
   isSample?: boolean | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -389,7 +391,7 @@ export interface JournalArticle {
  * via the `definition` "testimonials".
  */
 export interface Testimonial {
-  id: string;
+  id: number;
   quote: string;
   /**
    * Use a privacy-safe verified label, not an invented client name.
@@ -399,11 +401,11 @@ export interface Testimonial {
   isSample?: boolean | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -414,7 +416,7 @@ export interface Testimonial {
  * via the `definition` "enquiries".
  */
 export interface Enquiry {
-  id: string;
+  id: number;
   name: string;
   mobile: string;
   email: string;
@@ -440,11 +442,11 @@ export interface Enquiry {
   internalNotes?: string | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -454,7 +456,7 @@ export interface Enquiry {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -471,7 +473,7 @@ export interface PayloadKv {
  * via the `definition` "payload-jobs".
  */
 export interface PayloadJob {
-  id: string;
+  id: number;
   /**
    * Input data provided to the job
    */
@@ -581,48 +583,48 @@ export interface PayloadJob {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'admins';
-        value: string | Admin;
+        value: number | Admin;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
       } | null)
     | ({
         relationTo: 'folders';
-        value: string | Folder;
+        value: number | Folder;
       } | null)
     | ({
         relationTo: 'tags';
-        value: string | Tag;
+        value: number | Tag;
       } | null)
     | ({
         relationTo: 'projects';
-        value: string | Project;
+        value: number | Project;
       } | null)
     | ({
         relationTo: 'services';
-        value: string | Service;
+        value: number | Service;
       } | null)
     | ({
         relationTo: 'journal-articles';
-        value: string | JournalArticle;
+        value: number | JournalArticle;
       } | null)
     | ({
         relationTo: 'testimonials';
-        value: string | Testimonial;
+        value: number | Testimonial;
       } | null)
     | ({
         relationTo: 'enquiries';
-        value: string | Enquiry;
+        value: number | Enquiry;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   };
   updatedAt: string;
   createdAt: string;
@@ -632,10 +634,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   };
   key?: string | null;
   value?:
@@ -655,7 +657,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -670,15 +672,15 @@ export interface PayloadLlmInstruction {
   entitySlug: string;
   title?: string | null;
   entityType: 'collection' | 'global';
-  additionalInstructions?: LexicalRichText<LexicalNodes_3DE324E4> | null;
-  systemInstructions?: LexicalRichText<LexicalNodes_3DE324E4> | null;
+  additionalInstructions?: string | null;
+  systemInstructions?: string | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt: string;
   createdAt: string;
@@ -690,15 +692,25 @@ export interface PayloadLlmInstruction {
 export interface AdminsSelect<T extends boolean = true> {
   name?: T;
   role?: T;
-  figmaHandle?: T;
-  figmaImageUrl?: T;
-  userGroups?: T;
-  makePermission?: T;
-  email?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -708,8 +720,6 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   _h_folders?: T;
   _h_tags?: T;
-  prefix?: T;
-  _objectKey?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -976,7 +986,7 @@ export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
  * via the `definition` "website-settings".
  */
 export interface WebsiteSetting {
-  id: string;
+  id: number;
   /**
    * Use a placeholder until the legal/trading name is verified.
    */
@@ -991,11 +1001,11 @@ export interface WebsiteSetting {
   consultationNote?: string | null;
   createdBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedBy?: {
     relationTo: 'admins';
-    value: string | Admin;
+    value: number | Admin;
   } | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1005,7 +1015,7 @@ export interface WebsiteSetting {
  * via the `definition` "payload-jobs-stats".
  */
 export interface PayloadJobsStat {
-  id: string;
+  id: number;
   stats?:
     | {
         [k: string]: unknown;
@@ -1143,16 +1153,16 @@ export interface TaskSchedulePublish {
     doc?:
       | ({
           relationTo: 'projects';
-          value: string | Project;
+          value: number | Project;
         } | null)
       | ({
           relationTo: 'journal-articles';
-          value: string | JournalArticle;
+          value: number | JournalArticle;
         } | null);
     global?: string | null;
     user?: {
       relationTo: 'admins';
-      value: string | Admin;
+      value: number | Admin;
     } | null;
   };
   output?: unknown;
@@ -1163,92 +1173,6 @@ export interface TaskSchedulePublish {
  */
 export interface Auth {
   [k: string]: unknown;
-}
-
-/** @internal Core Lexical types — see @payloadcms/richtext-lexical. */
-export type LexicalElementFormat = 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-export type LexicalElementDirection = ('ltr' | 'rtl') | null;
-
-export interface SerializedLexicalElementBase<TChildren> {
-  children: TChildren[];
-  direction: LexicalElementDirection;
-  format: LexicalElementFormat;
-  indent: number;
-  textFormat?: number;
-  textStyle?: string;
-  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
-  version: number;
-}
-
-export type LexicalTextMode = 'normal' | 'token' | 'segmented';
-
-export interface SerializedTextNode {
-  type: 'text';
-  detail: number;
-  format: number;
-  mode: LexicalTextMode;
-  style: string;
-  text: string;
-  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
-  version: number;
-}
-
-export interface SerializedTabNode {
-  type: 'tab';
-  detail: number;
-  format: number;
-  mode: LexicalTextMode;
-  style: string;
-  text: string;
-  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
-  version: number;
-}
-
-export interface SerializedLineBreakNode {
-  type: 'linebreak';
-  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
-  version: number;
-}
-
-export interface SerializedParagraphNode<TChildren> extends SerializedLexicalElementBase<TChildren> {
-  type: 'paragraph';
-  textFormat: number;
-  textStyle: string;
-}
-
-export interface SerializedListNode<TChildren> extends SerializedLexicalElementBase<TChildren> {
-  type: 'list';
-  checked?: boolean;
-  listType: 'number' | 'bullet' | 'check';
-  start: number;
-  tag: 'ul' | 'ol';
-}
-
-export interface SerializedListItemNode<TChildren> extends SerializedLexicalElementBase<TChildren> {
-  type: 'listitem';
-  checked?: boolean;
-  value: number;
-}
-
-export interface SerializedHeadingNode<
-  TChildren,
-  TTag extends 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
-> extends SerializedLexicalElementBase<TChildren> {
-  type: 'heading';
-  tag: TTag;
-}
-
-/** Shape of a Lexical `richText` field. */
-export interface LexicalRichText<TNode> {
-  root: {
-    children: TNode[];
-    direction: LexicalElementDirection;
-    format: LexicalElementFormat;
-    indent: number;
-    type: 'root';
-    /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
-    version: number;
-  };
 }
 
 

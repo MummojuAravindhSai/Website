@@ -6,15 +6,58 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
-const makePublicPreviewOrigin = (() => {
-  const publicURL = process.env.FIGMA_PUBLIC_URL
-  if (!publicURL) return undefined
+const assetCdnRemotePattern = (() => {
+  const value = process.env.ASSET_CDN_URL
+  if (!value) return undefined
 
-  try {
-    // Next.js expects host[:port] entries rather than full URL origins.
-    return new URL(publicURL).host
-  } catch {
-    return undefined
+  if (process.env.PAYLOAD_STORAGE !== 's3') {
+    throw new Error('ASSET_CDN_URL requires PAYLOAD_STORAGE=s3.')
+  }
+
+  const url = new URL(value)
+  if (
+    url.protocol !== 'https:' ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error('ASSET_CDN_URL must be an HTTPS origin without a path or credentials.')
+  }
+
+  return {
+    protocol: 'https' as const,
+    hostname: url.hostname,
+    port: url.port,
+    pathname: '/**',
+  }
+})()
+
+const s3ImageRemotePattern = (() => {
+  if (process.env.PAYLOAD_STORAGE !== 's3' || !process.env.S3_BUCKET) return undefined
+
+  const region = process.env.AWS_REGION
+  const endpoint =
+    process.env.S3_ENDPOINT ||
+    (region
+      ? `https://s3.${region}.amazonaws.com${region.startsWith('cn-') ? '.cn' : ''}`
+      : undefined)
+
+  if (!endpoint) return undefined
+
+  const url = new URL(endpoint)
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('S3_ENDPOINT must use http or https.')
+  }
+
+  const endpointPath = url.pathname.replace(/\/$/, '')
+
+  return {
+    protocol: url.protocol.slice(0, -1) as 'http' | 'https',
+    hostname: url.hostname,
+    port: url.port,
+    pathname: `${endpointPath}/${process.env.S3_BUCKET}/**`,
   }
 })()
 
@@ -32,47 +75,21 @@ const nextConfig: NextConfig = {
     root: path.resolve(dirname),
   },
   output: 'standalone',
-  images: {
-    loader: 'custom',
-    loaderFile: './figma-image-loader.ts',
-  },
-  // Don't block publishing or preview deploys on errors if the emitted JS is valid
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  // `next dev` serves the Make preview at a per-sandbox cross-origin host. Next
-  // blocks its dev resources (`/_next/*`, HMR WebSocket, internal endpoints)
-  // unless the origin is listed here, and a blocked HMR socket stalls Turbopack
-  // so the Payload `/admin` panel renders blank in the preview iframe.
-  // Dev-only - ignored by `next build`.
-  //
-  allowedDevOrigins: makePublicPreviewOrigin ? [makePublicPreviewOrigin] : [],
+  ...(s3ImageRemotePattern || assetCdnRemotePattern
+    ? {
+        images: {
+          remotePatterns: [
+            ...(s3ImageRemotePattern ? [s3ImageRemotePattern] : []),
+            ...(assetCdnRemotePattern ? [assetCdnRemotePattern] : []),
+          ],
+        },
+      }
+    : {}),
   // Prerender source maps add ~100 MB per static build worker
   enablePrerenderSourceMaps: false,
   experimental: {
     // Caps static build workers (~250-380 MB each) to lower `next build` peak memory
     cpus: 2,
-    // Payload Admin uses Next Server Actions. In the Make preview proxy, the
-    // browser origin is the public sandbox host while `x-forwarded-host` points
-    // at the local dev server. Allow only that exact platform-provisioned host.
-    serverActions: {
-      allowedOrigins: makePublicPreviewOrigin ? [makePublicPreviewOrigin] : [],
-    },
-  },
-  env: {
-    NEXT_PUBLIC_SITE_URL: process.env.FIGMA_PUBLIC_URL || 'http://localhost:3000',
-    // NOTE: Do not add FIGMA_OAUTH_CLIENT_SECRET, FIGMA_CONTENT_API_ACCESS_KEY,
-    // or any other credential here. Values placed in `env` are inlined into
-    // the JavaScript bundle by Next.js at build time and become readable by
-    // anyone who can load the app's client assets. Server-side code
-    // (payload.config.ts, route handlers, server components) can still read
-    // these values from `process.env.*` without declaring them here. Only
-    // public, non-secret values that explicitly need to be available in
-    // browser code should be added - and those should use the `NEXT_PUBLIC_*`
-    // naming convention.
-    FIGMA_CONTENT_API_CONTENT_SYSTEM_ID: process.env.FIGMA_CONTENT_API_CONTENT_SYSTEM_ID,
-    FIGMA_CONTENT_API_URL: process.env.FIGMA_CONTENT_API_URL,
-    FIGMA_OAUTH_CLIENT_ID: process.env.FIGMA_OAUTH_CLIENT_ID,
   },
 }
 

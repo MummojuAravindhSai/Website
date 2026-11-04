@@ -2,21 +2,23 @@
 
 ## Scope and evidence
 
-This is the initial Phase One audit of the checked-in application source and configuration. It covers the Next.js frontend routes and components, Payload collections and globals, app actions, generated Payload route wrappers, package configuration, and Figma Make scripts.
+This was the initial Phase One audit before the standalone conversion. Current
+runtime and verification details are maintained in `ARCHITECTURE.md` and
+`MIGRATION_TEST_REPORT.md`.
 
 The local `.env` file was not opened, and no secret values were read or copied. The `.figma/content-inputs/` files were inventoried but not treated as verified business content. Binary assets and platform-owned internals were not independently validated. Findings about deployed Payload defaults, authentication, uploads, and production behavior still need runtime confirmation.
 
 ## Current architecture
 
 - **Framework:** Next.js 16.4.2 App Router, React 19.3.1, TypeScript 6.0.3, Tailwind CSS 4.
-- **CMS:** Payload 4.0.0-beta.4 using `@payloadcms/figma` and `buildFigmaConfig()`. Figma Make supplies the database, storage, deployment runtime, and platform-owned backend configuration; no standalone database adapter is configured in the app.
+- **CMS (at time of this audit):** Payload 4.0.0-beta.4 using the Figma-managed config. The app has since been converted to standard Payload `buildConfig` with PostgreSQL and configurable local/S3 media storage.
 - **Public routes:** `/`, `/about`, `/services`, `/projects`, `/projects/[slug]`, `/journal`, `/journal/[slug]`, and `/contact`, under `src/app/(frontend)/`.
 - **CMS routes:** Payload-generated `/admin` and `/api/*` handlers under `src/app/(payload)/`. These generated files should remain platform/Payload managed.
 - **Content model:** Admins, media, folders, tags, projects, services, journal articles, testimonials, enquiries, and website settings.
 - **Content access:** Server-side queries use the Payload Local API with `overrideAccess: false`. Project, service, article, and testimonial collections define public published-content filters. Enquiries allow public create and restrict read/update/delete to admins.
 - **Frontend content lifecycle:** Homepage, listing pages, services, contact, and about pages opt into static rendering. Project and article detail pages enumerate static params and set `dynamicParams = false`. No collection hooks or on-write revalidation are present.
-- **Styling and media:** Tailwind v4 utilities plus shared CSS tokens; Next Image uses the Figma custom loader. The visual system uses ivory, beige, taupe, charcoal, serif headings, and large image blocks.
-- **Environment:** Figma Make injects platform variables. `next.config.ts` maps `FIGMA_PUBLIC_URL` to `NEXT_PUBLIC_SITE_URL` and configures the preview origin. The local `.env` is ignored by Git.
+- **Styling and media:** Tailwind v4 utilities plus shared CSS tokens; Next Image uses the built-in loader. The visual system uses ivory, beige, taupe, charcoal, serif headings, and large image blocks.
+- **Environment (at time of this audit):** Figma Make injected platform variables. The standalone runtime now uses documented server-side environment variables, with `.env.local` ignored by Git.
 - **Build tooling:** Package scripts provide `dev`, `build`, `start`, `format`, and Payload generation commands. There is no `lint`, `test`, or `typecheck` script.
 
 ## Existing features

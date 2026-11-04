@@ -9,6 +9,8 @@ export const JournalArticles: CollectionConfig = {
     group: 'Website',
     useAsTitle: 'title',
     defaultColumns: ['title', 'category', '_status', 'publishedOn'],
+    description:
+      'Public journal pages are build-time snapshots. After publishing edits or new articles, rebuild and deploy the site for them to appear.',
   },
   access: {
     create: isAdmin,
@@ -23,7 +25,17 @@ export const JournalArticles: CollectionConfig = {
   },
   fields: [
     { name: 'title', type: 'text', required: true },
-    { name: 'slug', type: 'text', required: true, unique: true, index: true },
+    {
+      name: 'slug',
+      type: 'text',
+      required: true,
+      unique: true,
+      index: true,
+      admin: {
+        description:
+          'Use a lowercase, hyphen-separated URL slug. Changing a published slug changes its public URL.',
+      },
+    },
     { name: 'category', type: 'text' },
     { name: 'excerpt', type: 'textarea', required: true },
     { name: 'body', type: 'textarea', required: true },

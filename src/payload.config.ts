@@ -1,6 +1,7 @@
 import path from 'path'
-import { buildFigmaConfig } from '@payloadcms/figma'
-import { mcpPlugin } from '@payloadcms/plugin-mcp'
+import { postgresAdapter } from '@payloadcms/db-postgres'
+import { s3Storage } from '@payloadcms/storage-s3'
+import { buildConfig } from 'payload'
 import { en as adminLanguage } from '@payloadcms/translations/languages/en'
 import { fileURLToPath } from 'url'
 import { Admins } from './collections/Admins'
@@ -16,16 +17,80 @@ import { WebsiteSettings } from './globals/WebsiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+const localStorageMode = process.env.PAYLOAD_STORAGE ?? 'local'
 
-export default buildFigmaConfig({
+function requireEnv(name: 'DATABASE_URL' | 'PAYLOAD_SECRET'): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`Missing ${name}. Set it in your local .env.local file.`)
+  }
+  return value
+}
+
+function getS3StorageConfig() {
+  if (localStorageMode !== 's3') return undefined
+
+  const bucket = process.env.S3_BUCKET
+  const region = process.env.AWS_REGION
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+
+  if (!bucket) throw new Error('S3_BUCKET is required when PAYLOAD_STORAGE=s3.')
+  if (!region) throw new Error('AWS_REGION is required when PAYLOAD_STORAGE=s3.')
+  if (Boolean(accessKeyId) !== Boolean(secretAccessKey)) {
+    throw new Error(
+      'Set both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, or omit both to use the AWS runtime role.',
+    )
+  }
+
+  const endpoint =
+    process.env.S3_ENDPOINT ||
+    `https://s3.${region}.amazonaws.com${region.startsWith('cn-') ? '.cn' : ''}`
+
+  const mediaCollection = process.env.S3_PREFIX
+    ? { prefix: process.env.S3_PREFIX }
+    : (true as const)
+
+  return {
+    bucket,
+    collections: {
+      media: mediaCollection,
+    },
+    config: {
+      region,
+      endpoint,
+      ...(accessKeyId && secretAccessKey
+        ? {
+            credentials: {
+              accessKeyId,
+              secretAccessKey,
+              ...(process.env.AWS_SESSION_TOKEN
+                ? { sessionToken: process.env.AWS_SESSION_TOKEN }
+                : {}),
+            },
+          }
+        : {}),
+    },
+  }
+}
+
+if (localStorageMode !== 'local' && localStorageMode !== 's3') {
+  throw new Error('PAYLOAD_STORAGE must be either "local" or "s3".')
+}
+
+const s3Config = getS3StorageConfig()
+const storageAdapters = s3Config ? [s3Storage(s3Config)] : []
+
+export default buildConfig({
   admin: {
     user: Admins.slug,
+    routes: { logout: '/signed-out' as const },
     constrainWidth: true,
     dashboard: {
       widgets: [],
       defaultLayout: [
-        { widgetSlug: 'activity', width: 'full' },
-        { widgetSlug: 'collections', width: 'full' },
+        { widgetSlug: 'activity' as const, width: 'full' as const },
+        { widgetSlug: 'collections' as const, width: 'full' as const },
       ],
     },
     importMap: {
@@ -33,7 +98,7 @@ export default buildFigmaConfig({
     },
   },
   i18n: {
-    fallbackLanguage: 'en',
+    fallbackLanguage: 'en' as const,
     supportedLanguages: { en: adminLanguage },
   },
   collections: [
@@ -56,6 +121,12 @@ export default buildFigmaConfig({
     fallback: true,
     defaultLocale: 'en',
   },
-  plugins: [mcpPlugin({})],
-  figma: {},
+  storage: storageAdapters,
+  db: postgresAdapter({
+    pool: {
+      connectionString: requireEnv('DATABASE_URL'),
+    },
+    migrationDir: path.resolve(dirname, 'migrations'),
+  }),
+  secret: requireEnv('PAYLOAD_SECRET'),
 })

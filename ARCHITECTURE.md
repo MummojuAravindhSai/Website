@@ -2,9 +2,9 @@
 
 ## Runtime and platform
 
-This application is a Next.js App Router project using React Server Components by default, with Client Components for interactive UI such as the mobile navigation, project browser, video-card sample control, and consultation form. The app is designed to run in Figma Make.
+This is a standalone Next.js App Router application using React Server Components by default, with Client Components for interactive UI such as the mobile navigation, project browser, video-card sample control, and consultation form.
 
-Figma Make owns the database, authentication integration for Payload Admin, file storage, deployment runtime, and platform secrets. `src/payload.config.ts` uses `buildFigmaConfig()`; the app does not configure a database adapter, Payload secret, or standalone storage provider.
+Payload uses PostgreSQL through `@payloadcms/db-postgres`, a server-only `PAYLOAD_SECRET`, and configurable local or S3 media storage. Production credentials are injected by AWS Secrets Manager through the ECS task definition; the application does not retrieve secrets itself.
 
 ## Route groups
 
@@ -16,7 +16,6 @@ Figma Make owns the database, authentication integration for Payload Admin, file
   - `/journal` and `/journal/[slug]` — Payload-backed articles
   - `/contact` — public consultation form
 - `src/app/(payload)/` contains Payload-generated Admin, REST, and GraphQL wrappers. Do not edit generated files directly unless recovering a documented generator failure.
-- `src/app/(frontend)/.figma/make/[asset]/route.ts` serves the Make favicon and social image by an explicit allowlist.
 
 ## Data model
 
@@ -46,21 +45,21 @@ The contact form submits to `submitEnquiry`, a Next.js Server Action. It validat
 
 ## UI and assets
 
-Tailwind CSS v4 is loaded from `src/app/(frontend)/styles.css`, with shared editorial design styles and reduced-motion support. CMS media is rendered through `MediaImage` and Next Image, using the existing Figma custom loader in `figma-image-loader.ts`. Static sample images live under `public/assets/`.
+Tailwind CSS v4 is loaded from `src/app/(frontend)/styles.css`, with shared editorial design styles and reduced-motion support. CMS media is rendered through `MediaImage` and Next Image, using the built-in Next.js image loader. Static sample images live under `public/assets/`.
 
-The root layout defines shared fonts, navigation, footer, and global metadata. Make site settings are imported from `.figma/make/site.json`; custom HTML can be inserted by `src/lib/make-custom-code.tsx`, including a `dangerouslySetInnerHTML` body fragment, so that configuration must remain trusted and reviewed.
+The root layout defines shared fonts, navigation, footer, an accessibility skip link, and global metadata. Public studio and contact information is managed through the Payload `website-settings` global.
 
 ## Configuration and build
 
 - Dependencies are pinned by `pnpm-lock.yaml`; toolchain versions are specified in `.mise.toml`.
-- `next.config.ts` wraps the app with `withPayload`, configures the preview origin, standalone output, and custom image loader.
-- `typescript.ignoreBuildErrors` is currently enabled and must not be interpreted as a passing type check.
-- `.figma/make/*` provides the platform install, dev, deploy, and deploy-preview lifecycle.
-- Figma platform variables and Payload backend values are platform-owned; do not add local dummy values or expose secrets in client bundles.
+- `next.config.ts` wraps the app with `withPayload`, emits standalone output for ECS containers, and allows configured S3/CloudFront media URLs for Next Image. Production uploads use a private S3 bucket and CloudFront Origin Access Control; `ASSET_CDN_URL` switches public site images to the CDN.
+- `scripts/start.mjs` supports local loopback binding and container binding via `APP_HOST`.
+- Local/AWS environment variables are documented in `.env.example` and `LOCAL_SETUP.md`; never expose secrets in client bundles.
+- [AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md) documents the ECS Fargate, private RDS, S3, CloudFront, and Secrets Manager deployment contract.
 
 ## Architecture decisions for follow-up
 
 1. Select either an intentional build-time snapshot or a complete publish-fresh cache invalidation design.
 2. Use explicit collection access rules as the authorization boundary for every public API path.
-3. Keep CMS content in Payload and use the provided Figma data tooling for document CRUD/seeding when available.
+3. Keep CMS content in Payload and use Payload's supported data tools for document CRUD/seeding.
 4. Preserve source-authored content only where it is genuinely static UI; move verified business-managed facts into CMS settings/content as scope requires.

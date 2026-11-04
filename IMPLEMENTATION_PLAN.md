@@ -19,7 +19,7 @@ This is the prioritized follow-up to the initial audit. It is a proposal, not a 
 3. Add focused tests for collection access, enquiry field validation, draft visibility, sample-content filtering, and slug routes.
 4. Add a route error boundary and structured server-side logging for failed public mutations.
 
-**Exit checks:** Type check, lint, focused tests, and production build are repeatable in the supported Figma Make lifecycle.
+**Exit checks:** Type check, lint, focused tests, and production build are repeatable in the standalone deployment workflow.
 
 ## Phase 3 — Define the content lifecycle
 

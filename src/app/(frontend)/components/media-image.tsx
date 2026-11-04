@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import type { Media } from '@/payload-types'
+import { getMediaSourceUrl } from '@/lib/media-url'
 
 export function MediaImage({
   media,
@@ -7,16 +8,16 @@ export function MediaImage({
   priority = false,
   sizes = '100vw',
 }: {
-  media?: Media | string | null
+  media?: Media | Media['id'] | null
   className?: string
   priority?: boolean
   sizes?: string
 }) {
-  if (!media || typeof media === 'string' || !media.url) return null
+  if (!media || typeof media !== 'object' || !media.url) return null
 
   return (
     <Image
-      src={media.url}
+      src={getMediaSourceUrl(media.url)}
       alt={media.alt}
       fill
       priority={priority}

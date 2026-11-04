@@ -1,0 +1,15 @@
+{
+  "slug": "media",
+  "returning": true,
+  "documents": [
+    {"data":{"alt":"Sample: warm contemporary living room with garden connection"},"file":"public/assets/b2d2e.png"},
+    {"data":{"alt":"Sample: softly lit textured wall and sculptural bench"},"file":"public/assets/88d84.png"},
+    {"data":{"alt":"Sample: warm modern apartment living and dining interior"},"file":"public/assets/26914.png"},
+    {"data":{"alt":"Sample: timber-lined contemporary residential interior"},"file":"public/assets/d38b7.png"},
+    {"data":{"alt":"Sample: calm neutral-toned home interior"},"file":"public/assets/47efd.png"},
+    {"data":{"alt":"Sample: quiet interior shaped by natural light"},"file":"public/assets/a48d3.png"},
+    {"data":{"alt":"Sample: close view of natural stone texture"},"file":"public/assets/a57e6.png"},
+    {"data":{"alt":"Sample: close view of warm timber grain"},"file":"public/assets/cf98d.png"},
+    {"data":{"alt":"Sample: close view of textured mineral plaster"},"file":"public/assets/f40d8.png"}
+  ]
+}
