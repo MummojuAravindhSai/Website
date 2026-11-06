@@ -97,14 +97,10 @@ RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs
 
 # Copy only production standalone output
-COPY --from=builder --chown=nextjs:nodejs \
-    /app/.next/standalone ./
-
-COPY --from=builder --chown=nextjs:nodejs \
-    /app/.next/static ./.next/static
-
-COPY --from=builder --chown=nextjs:nodejs \
-    /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/certs/rds-global-bundle.pem ./certs/rds-global-bundle.pem
 
 RUN mkdir -p /app/.next/cache && \
     chown -R nextjs:nodejs /app/.next
