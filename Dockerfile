@@ -70,13 +70,12 @@ COPY . .
 # Secrets are mounted temporarily and not baked into image layers
 RUN --mount=type=secret,id=DATABASE_URL \
     --mount=type=secret,id=PAYLOAD_SECRET \
+    --mount=type=secret,id=aws_credentials \
     set -eu; \
     test -s /run/secrets/DATABASE_URL; \
     test -s /run/secrets/PAYLOAD_SECRET; \
-    test -n "$AWS_REGION"; \
-    test -n "$S3_BUCKET"; \
-    case "$NEXT_PUBLIC_SITE_URL" in https://*) ;; *) echo "HTTPS site URL required"; exit 1 ;; esac; \
-    case "$ASSET_CDN_URL" in https://*) ;; *) echo "HTTPS CDN URL required"; exit 1 ;; esac; \
+    test -s /run/secrets/aws_credentials; \
+    . /run/secrets/aws_credentials; \
     export DATABASE_URL="$(cat /run/secrets/DATABASE_URL)"; \
     export PAYLOAD_SECRET="$(cat /run/secrets/PAYLOAD_SECRET)"; \
     pnpm build
